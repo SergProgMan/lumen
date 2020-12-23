@@ -1,0 +1,38 @@
+version: '3'
+services:
+  web:
+    build: _docker/nginx
+    image: project-nginx:1
+    volumes:
+      - ./:/application
+      - ./_docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./_docker/nginx/local.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 80:80
+    restart: always
+    depends_on:
+      - php-fpm
+      - db
+    links:
+      - php-fpm
+  php-fpm:
+    build: _docker/php-fpm
+    image: project-php-fpm:1
+    restart: always
+    volumes:
+      - ./_docker/php-fpm/php.ini:/usr/local/etc/php/conf.d/php.ini
+      - ./_docker/php-fpm/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+      - ./:/application
+    links:
+      - db
+  db:
+    image: postgres:12.2
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 5432:5432
+    volumes:
+      - ./_docker/postgres/:/docker-entrypoint-initdb.d/
